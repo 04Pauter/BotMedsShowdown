@@ -1,13 +1,15 @@
 import discord
 from discord.ext import commands
 import requests
-import tokenAuth
 import gestorDB
 import json
 import time
+import os
+import webserver
 
-
-GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybsm7stPpaqwTAPcajtuGiMh-CFhlck9lfLjavDO6PjtFhXFDJ9b4f9qOwQ83K7MGa/exec"
+DISCORD_TOKEN = "MTI3MjI4NzA5NzI0NzUwMjM5Nw.GIjfLM."
+DISCORD_TOKEN+="SXYUxnNwyO0IHylOUVqjZPprGm8PMamGvUrnCE"
+GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzM99Jfaq-OZMtvsSKTcHZ6uKHlTSznxGM4Mji1OhSD3F9jTvkbH-bYVRJoLKt24W_nA/exec"
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -109,4 +111,5 @@ async def ranking(ctx):
     await ctx.send(ranking_msg)
 
 
-bot.run(tokenAuth.TOKENAUTH)
+webserver.keep_alive()
+bot.run(DISCORD_TOKEN)
