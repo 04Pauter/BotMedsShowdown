@@ -28,9 +28,48 @@ async def test(ctx, *args):  # *args permite múltiples argumentos
 
 @bot.command()
 async def med(ctx, medalla: str, replay: str):
+    """Registra una medalla y asigna un rol según el tipo de Pokémon."""
+    tipos_pokemon = {
+        "normal": "🏅Medalla_Normal",
+        "fuego": "🔥Medalla_Fuego",
+        "agua": "💧Medalla_Agua",
+        "eléctrico": "⚡Medalla_Eléctrico",
+        "planta": "🌿Medalla_Planta",
+        "hielo": "❄️Medalla_Hielo",
+        "lucha": "🥊Medalla_Lucha",
+        "veneno": "☠️Medalla_Veneno",
+        "tierra": "🏜️Medalla_Tierra",
+        "volador": "🌪️Medalla_Volador",
+        "psíquico": "🌀Medalla_Psíquico",
+        "bicho": "🐛Medalla_Bicho",
+        "roca": "🪨Medalla_Roca",
+        "fantasma": "👻Medalla_Fantasma",
+        "dragón": "🐉Medalla_Dragón",
+        "siniestro": "🌑Medalla_Siniestro",
+        "acero": "🔩Medalla_Acero",
+        "hada": "✨Medalla_Hada"
+    }
+
+    tipo_medalla = medalla.lower()  # Convertimos a minúsculas para evitar errores de escritura
+
+    if tipo_medalla not in tipos_pokemon:
+        await ctx.send("⚠️ Tipo de medalla no válido. Usa un tipo de Pokémon válido (Ej: fuego, agua, eléctrico, etc.).")
+        return
+
     usuario_id = ctx.author.id
     gestorDB.insert_medalla(usuario_id, medalla, replay)
-    await ctx.send(f'✅ Medalla guardada: **{medalla}** (Replay: {replay})')
+
+    # Asignar el rol correspondiente al usuario
+    rol_nombre = tipos_pokemon[tipo_medalla]
+    rol = discord.utils.get(ctx.guild.roles, name=rol_nombre)
+
+    if rol:
+        await ctx.author.add_roles(rol)
+        await ctx.send(f"✅ Medalla guardada: **{medalla.capitalize()}** (Replay: {replay})\n🎖️ Se te ha asignado el rol `{rol_nombre}`.")
+    else:
+        await ctx.send(f"✅ Medalla guardada: **{medalla.capitalize()}** (Replay: {replay})\n⚠️ No se encontró el rol `{rol_nombre}`, asegúrate de que exista en el servidor.")
+
+
 
 @bot.command()
 async def verMeds(ctx):
@@ -44,14 +83,37 @@ async def verMeds(ctx):
 
 @bot.command()
 async def eliminarMeds(ctx):
-    """Elimina todas las medallas de un usuario."""
+    """Elimina todas las medallas y roles de un usuario."""
     usuario_id = ctx.author.id
-    success = gestorDB.delete_medallas_by_user(usuario_id)
+
+    # Eliminar medallas de la base de datos
+    success_medallas = gestorDB.delete_medallas_by_user(usuario_id)
     
-    if success:
-        await ctx.send("🗑️ ✅ Todas tus medallas han sido eliminadas.")
+    # Eliminar roles asociados al usuario
+    usuario = ctx.author
+    roles_eliminados = []
+    
+    # Lista de roles que deben ser eliminados, aquí asumo que el nombre del rol es el mismo que el tipo de medalla
+    roles_a_eliminar = [rol for rol in usuario.roles if rol.name in ["🔥Medalla_Fuego", "💧Medalla_Agua", "🌿Medalla_Planta", "⚡Medalla_Eléctrico", "❄️Medalla_Hielo", "🥊Medalla_Lucha", "🌑Medalla_Siniestro", "🌑Medalla_Siniestro", "🐛Medalla_Bicho", "🪨Medalla_Roca", "🔩Medalla_Acero", "✨Medalla_Hada", "🏅Medalla_Normal", "🌀Medalla_Psíquico", "🏜️Medalla_Tierra", "☠️Medalla_Veneno", "🌪️Medalla_Volador", "🐉Medalla_Dragón"]]  # Ejemplo con tipos Pokémon
+    
+    for rol in roles_a_eliminar:
+        try:
+            await usuario.remove_roles(rol)
+            roles_eliminados.append(rol.name)
+        except discord.Forbidden:
+            await ctx.send("⚠️ No tengo permisos suficientes para eliminar algunos roles.")
+            break
+
+    # Confirmación
+    if success_medallas and roles_eliminados:
+        await ctx.send(f"🗑️ ✅ Todas tus medallas y roles {', '.join(roles_eliminados)} han sido eliminados.")
+    elif success_medallas:
+        await ctx.send("🗑️ ✅ Todas tus medallas han sido eliminadas, pero no se encontraron roles a eliminar.")
+    elif roles_eliminados:
+        await ctx.send(f"🗑️ ✅ Los roles {', '.join(roles_eliminados)} han sido eliminados, pero no tenías medallas registradas.")
     else:
-        await ctx.send("⚠️ No tienes medallas registradas o ocurrió un error al eliminarlas.")
+        await ctx.send("⚠️ No tenías medallas registradas ni roles asociados.")
+
 
 
 @bot.command()
@@ -186,6 +248,36 @@ async def on_command_error(ctx, error):
     else:
         # Si es otro error, lo mostramos en consola
         print(f"Error desconocido: {error}")
+
+@bot.command()
+async def crearRol(ctx, nombre_rol: str):
+    """Crea un rol con el nombre especificado por el usuario."""
+
+    # Verificar si el autor tiene permisos para gestionar roles
+    if not ctx.author.guild_permissions.manage_roles:
+        await ctx.send("⚠️ No tienes permisos para crear roles en este servidor.")
+        return
+
+    # Verificar si el bot tiene permisos para gestionar roles
+    if not ctx.guild.me.guild_permissions.manage_roles:
+        await ctx.send("⚠️ No tengo permisos para crear roles en este servidor.")
+        return
+
+    # Comprobar si el rol ya existe
+    rol_existente = discord.utils.get(ctx.guild.roles, name=nombre_rol)
+    if rol_existente:
+        await ctx.send(f"⚠️ El rol `{nombre_rol}` ya existe.")
+        return
+
+    # Crear el rol
+    try:
+        rol = await ctx.guild.create_role(name=nombre_rol, reason=f"Rol creado por {ctx.author}")
+        await ctx.send(f"✅ El rol `{nombre_rol}` ha sido creado con éxito.")
+    except discord.Forbidden:
+        await ctx.send("⚠️ No tengo permisos suficientes para crear el rol.")
+    except Exception as e:
+        await ctx.send(f"❌ Ocurrió un error al crear el rol: {str(e)}")
+
 
 
 @bot.command()
