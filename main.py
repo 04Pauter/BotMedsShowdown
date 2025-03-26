@@ -143,6 +143,27 @@ async def mutear(ctx, miembro: discord.Member, tiempo: int = 0):
         await ctx.send(f"✅ {miembro.mention} ha sido desmuteado después de {tiempo} segundos.")
 
 @bot.command()
+async def unmute(ctx, miembro: discord.Member):
+    """Desmutea a un usuario en el chat, permitiéndole escribir nuevamente."""
+
+    # Verificamos si el autor del comando tiene permisos para desmutear
+    if not ctx.author.guild_permissions.manage_messages:
+        await ctx.send("⚠️ No tienes permisos para desmutear usuarios en el chat.")
+        return
+    
+    # Verificamos si el bot tiene permisos para modificar permisos
+    if not ctx.guild.me.guild_permissions.manage_messages:
+        await ctx.send("⚠️ No tengo permisos para desmutear usuarios en el chat.")
+        return
+
+    # Restauramos los permisos del usuario en todos los canales de texto
+    for canal in ctx.guild.text_channels:
+        await canal.set_permissions(miembro, send_messages=None)  # Restaurar permisos
+    
+    await ctx.send(f"✅ {miembro.mention} ha sido desmuteado en el chat.")
+
+
+@bot.command()
 async def ranking(ctx):
     """Muestra el ranking de los 10 usuarios con más medallas."""
     top_usuarios = gestorDB.select_top_usuarios()
@@ -185,6 +206,7 @@ async def ayuda(ctx):
     embed.add_field(name="📤 `Dam exportarMeds`", value="Exporta tus medallas a Google Sheets.", inline=False)
     embed.add_field(name="🏆 `Dam ranking`", value="Muestra el ranking de los 10 usuarios con más medallas.", inline=False)
     embed.add_field(name="🔇 `Dam mutear <@usuario>`", value="Restringe temporalmente a un usuario para que no pueda escribir.", inline=False)
+    embed.add_field(name="🔊 `Dam unmute <@usuario>`", value="Restaura los permisos de escritura de un usuario.", inline=False)
     
     embed.set_footer(text="Usa 'Dam <comando>' para interactuar con el bot.")
 
