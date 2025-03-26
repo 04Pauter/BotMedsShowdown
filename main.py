@@ -6,6 +6,7 @@ import json
 import time
 import os
 import webserver
+import asyncio
 
 DISCORD_TOKEN = "MTI3MjI4NzA5NzI0NzUwMjM5Nw.GIjfLM."
 DISCORD_TOKEN+="SXYUxnNwyO0IHylOUVqjZPprGm8PMamGvUrnCE"
@@ -43,9 +44,29 @@ async def verMeds(ctx):
 
 @bot.command()
 async def eliminarMeds(ctx):
+    """Elimina todas las medallas de un usuario."""
     usuario_id = ctx.author.id
-    gestorDB.delete_medallas_by_user(usuario_id)
-    await ctx.send("🗑️ ✅ Todas tus medallas han sido eliminadas.")
+    success = gestorDB.delete_medallas_by_user(usuario_id)
+    
+    if success:
+        await ctx.send("🗑️ ✅ Todas tus medallas han sido eliminadas.")
+    else:
+        await ctx.send("⚠️ No tienes medallas registradas o ocurrió un error al eliminarlas.")
+
+
+@bot.command()
+async def eliminarUsuario(ctx):
+    """Elimina un usuario solo si no tiene medallas asociadas."""
+    usuario_id = ctx.author.id
+    try:
+        success = gestorDB.delete_usuario(usuario_id)
+        if success:
+            await ctx.send("🗑️ ✅ Tu cuenta ha sido eliminada con éxito.")
+        else:
+            await ctx.send("⚠️ Ocurrió un error al intentar eliminar tu cuenta.")
+    except ValueError as e:
+        await ctx.send(f"⚠️ {str(e)}")
+
 
 @bot.command()
 async def registrar(ctx, nombre_usuario: str):
@@ -93,7 +114,33 @@ async def exportarMeds(ctx):
     resultado = export_medallas_to_sheets(usuario_id)
     await ctx.send(resultado)
 
+@bot.command()
+async def mutear(ctx, miembro: discord.Member, tiempo: int = 0):
+    """Mutea a un usuario en el chat por un tiempo específico (en segundos). Si no se especifica tiempo, será indefinido."""
 
+    # Verificamos si el autor del comando tiene permisos para mutear
+    if not ctx.author.guild_permissions.manage_messages:
+        await ctx.send("⚠️ No tienes permisos para mutear usuarios en el chat.")
+        return
+    
+    # Verificamos si el bot tiene permisos para mutear
+    if not ctx.guild.me.guild_permissions.manage_messages:
+        await ctx.send("⚠️ No tengo permisos para mutear usuarios en el chat.")
+        return
+
+    # Mutear al usuario en todos los canales de texto
+    for canal in ctx.guild.text_channels:
+        await canal.set_permissions(miembro, send_messages=False)
+    
+    await ctx.send(f"✅ {miembro.mention} ha sido muteado en el chat.")
+
+    # Si se ha especificado un tiempo, desmutamos automáticamente después de ese tiempo
+    if tiempo > 0:
+        await asyncio.sleep(tiempo)  # Esperar el tiempo especificado
+        # Restauramos los permisos del usuario para enviar mensajes
+        for canal in ctx.guild.text_channels:
+            await canal.set_permissions(miembro, send_messages=None)  # Restaurar permisos
+        await ctx.send(f"✅ {miembro.mention} ha sido desmuteado después de {tiempo} segundos.")
 
 @bot.command()
 async def ranking(ctx):
@@ -109,6 +156,39 @@ async def ranking(ctx):
         ranking_msg += f"**#{i}** - {nombre_usuario} 🏅 {cantidad} medallas\n"
 
     await ctx.send(ranking_msg)
+
+@bot.event
+async def on_command_error(ctx, error):
+    """Maneja errores cuando un usuario ingresa un comando inválido."""
+    if isinstance(error, commands.CommandNotFound):
+        await ctx.send(f"⚠️ El comando que intentaste usar no existe. Usa `Dam help` para ver los comandos disponibles.")
+    else:
+        # Si es otro error, lo mostramos en consola
+        print(f"Error desconocido: {error}")
+
+
+@bot.command()
+async def ayuda(ctx):
+    """Muestra la lista de comandos disponibles."""
+    embed = discord.Embed(
+        title="📜 Lista de Comandos Disponibles",
+        description="Aquí tienes los comandos que puedes usar con el bot:",
+        color=discord.Color.blue()
+    )
+
+
+    embed.add_field(name="💬 `Dam help`", value="Muestra esta lista de comandos.", inline=False)
+    embed.add_field(name="🏅 `Dam med <medalla> <replay>`", value="Registra una medalla con su replay.", inline=False)
+    embed.add_field(name="📜 `Dam verMeds`", value="Muestra todas tus medallas guardadas.", inline=False)
+    embed.add_field(name="🗑️ `Dam eliminarMeds`", value="Elimina todas tus medallas registradas.", inline=False)
+    embed.add_field(name="📝 `Dam registrar <nombre>`", value="Registra tu usuario en la base de datos.", inline=False)
+    embed.add_field(name="📤 `Dam exportarMeds`", value="Exporta tus medallas a Google Sheets.", inline=False)
+    embed.add_field(name="🏆 `Dam ranking`", value="Muestra el ranking de los 10 usuarios con más medallas.", inline=False)
+    embed.add_field(name="🔇 `Dam mutear <@usuario>`", value="Restringe temporalmente a un usuario para que no pueda escribir.", inline=False)
+    
+    embed.set_footer(text="Usa 'Dam <comando>' para interactuar con el bot.")
+
+    await ctx.send(embed=embed)
 
 
 webserver.keep_alive()

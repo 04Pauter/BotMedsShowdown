@@ -73,6 +73,48 @@ def select_medallas_by_user(usuario_id: int):
     conn.close()
     return medallas  # Devuelve el nombre del usuario junto con las medallas
 
+
+def delete_medallas_by_user(usuario_id: int) -> bool:
+    """Elimina todas las medallas de un usuario específico."""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    # Verificar si el usuario existe
+    cursor.execute("SELECT * FROM usuarios WHERE id_usuario = ?", (usuario_id,))
+    if not cursor.fetchone():
+        conn.close()
+        return False  # Usuario no existe
+
+    # Eliminar las medallas del usuario
+    cursor.execute("DELETE FROM medallas WHERE usuario_id = ?", (usuario_id,))
+    conn.commit()
+    conn.close()
+    return True  # Medallas eliminadas con éxito
+
+def delete_usuario(usuario_id: int) -> bool:
+    """Elimina un usuario solo si no tiene medallas asociadas."""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    # Verificar si el usuario existe
+    cursor.execute("SELECT * FROM usuarios WHERE id_usuario = ?", (usuario_id,))
+    if not cursor.fetchone():
+        conn.close()
+        return False  # Usuario no existe
+
+    # Verificar si el usuario tiene medallas asociadas
+    cursor.execute("SELECT * FROM medallas WHERE usuario_id = ?", (usuario_id,))
+    if cursor.fetchone():
+        conn.close()
+        raise ValueError("El usuario tiene medallas asociadas y no puede ser eliminado.")  # Lanzar error si tiene medallas
+
+    # Eliminar el usuario
+    cursor.execute("DELETE FROM usuarios WHERE id_usuario = ?", (usuario_id,))
+    conn.commit()
+    conn.close()
+    return True  # Usuario eliminado con éxito
+
+
 def insert_medalla(usuario_id: int, medalla: str, replay: str) -> bool:
     """Inserta una nueva medalla en la base de datos solo si el usuario existe."""
     conn = sqlite3.connect(DB_NAME)
