@@ -57,29 +57,6 @@ Aquest projecte és un bot de Discord desenvolupat en Python que permet als usua
 - `Dam crearRol <nom_rol>` → Crea un rol nou al servidor.
 - `Dam help` → Mostra la llista de comandes disponibles.
 
-## Contribució
-
-Si vols contribuir al projecte, segueix aquests passos:
-
-1. Fes un fork del repositori.
-2. Crea una branca amb la teva funcionalitat:
-   ```sh
-   git checkout -b nova-funcionalitat
-   ```
-3. Fes els canvis i commiteja:
-   ```sh
-   git commit -m "Afegeix nova funcionalitat"
-   ```
-4. Puja els canvis al teu fork:
-   ```sh
-   git push origin nova-funcionalitat
-   ```
-5. Obre un pull request.
-
-## Llicència
-
-Aquest projecte està sota la llicència MIT. Veure el fitxer `LICENSE` per a més informació.
-
 ## Autor
 
 👤 **[El teu nom o pseudònim]**
