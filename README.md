@@ -21,30 +21,6 @@ Aquest projecte és un bot de Discord desenvolupat en Python que permet als usua
   ```sh
   pip install -r requirements.txt
   ```
-
-## Instal·lació
-
-1. Clona aquest repositori:
-   ```sh
-   git clone https://github.com/el_teu_repositori.git
-   ```
-2. Accedeix a la carpeta del projecte:
-   ```sh
-   cd el_teu_repositori
-   ```
-3. Instal·la les dependències:
-   ```sh
-   pip install -r requirements.txt
-   ```
-4. Crea un fitxer `.env` i afegeix-hi el teu token de Discord:
-   ```env
-   DISCORD_TOKEN=el_teu_token
-   ```
-5. Executa el bot:
-   ```sh
-   python main.py
-   ```
-
 ## Comandes Principals
 
 - `Dam med <medalla> <replay>` → Registra una medalla.
