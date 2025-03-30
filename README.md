@@ -35,8 +35,5 @@ Aquest projecte és un bot de Discord desenvolupat en Python que permet als usua
 
 ## Autor
 
-👤 **[El teu nom o pseudònim]**
-
-- ✉️ [El teu correu electrònic o contacte opcional]
-- 🔗 [Enllaç al teu perfil de GitHub]
+👤 **[04Pauter]**
 
